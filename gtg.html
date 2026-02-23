@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Sender Ultra</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: Arial, sans-serif;
+}
+
+body{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background: linear-gradient(-45deg,#ff512f,#dd2476,#24c6dc,#514a9d);
+    background-size:400% 400%;
+    animation:bg 8s infinite;
+}
+
+@keyframes bg{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
+
+.box{
+    width:95%;
+    max-width:420px;
+    background:white;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 0 20px rgba(0,0,0,0.3);
+    text-align:center;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:16px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:8px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    color:white;
+    cursor:pointer;
+}
+
+.green{background:green;}
+.red{background:red;}
+.blue{background:#007bff;}
+
+.active{
+    transform:scale(1.05);
+}
+
+#apiPage{display:none;}
+
+.linkPreview{
+    background:#f1f1f1;
+    padding:8px;
+    font-size:13px;
+    border-radius:8px;
+    word-break:break-all;
+    margin-bottom:8px;
+}
+
+.loadingScreen{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.loaderBox{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+}
+
+.loader{
+    border:5px solid #f3f3f3;
+    border-top:5px solid #007bff;
+    border-radius:50%;
+    width:40px;
+    height:40px;
+    animation:spin 1s linear infinite;
+    margin:auto;
+}
+
+@keyframes spin{
+    0%{transform:rotate(0deg);}
+    100%{transform:rotate(360deg);}
+}
+
+.resultBox{
+    margin-top:10px;
+    max-height:200px;
+    overflow:auto;
+    text-align:left;
+    font-size:13px;
+    background:#f8f8f8;
+    padding:8px;
+    border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box" id="loginPage">
+    <h2>🔐 Login</h2>
+    <input type="password" id="password" placeholder="Enter Password">
+    <button class="blue" onclick="login()">Login</button>
+</div>
+
+<div class="box" id="apiPage">
+    <h2>⚙ API Controller</h2>
+
+    <div class="linkPreview" id="linkPreview"></div>
+
+    <input type="text" id="tc" placeholder="Enter tc">
+    <input type="text" id="uid1" placeholder="Enter uid1">
+    <input type="text" id="emote" placeholder="Enter emote_id (optional)">
+
+    <button id="trueBtn" class="green" onclick="setStart(true)">Start True</button>
+    <button id="falseBtn" class="red" onclick="setStart(false)">Start False</button>
+
+    <button class="blue" onclick="sendData()">🚀 Sending</button>
+
+    <div class="resultBox" id="resultBox"></div>
+</div>
+
+<div class="loadingScreen" id="loadingScreen">
+    <div class="loaderBox">
+        <div class="loader"></div>
+        <p>Loading...</p>
+    </div>
+</div>
+
+<script>
+let startValue = true;
+
+function login(){
+    let pass = document.getElementById("password").value;
+    if(pass === "123"){
+        document.getElementById("loginPage").style.display="none";
+        document.getElementById("apiPage").style.display="block";
+    }else{
+        alert("Wrong Password!");
+    }
+}
+
+function setStart(val){
+    startValue = val;
+    document.getElementById("trueBtn").classList.remove("active");
+    document.getElementById("falseBtn").classList.remove("active");
+
+    if(val){
+        document.getElementById("trueBtn").classList.add("active");
+    }else{
+        document.getElementById("falseBtn").classList.add("active");
+    }
+
+    buildLink();
+}
+
+function buildLink(){
+    let tc = document.getElementById("tc").value;
+    let uid1 = document.getElementById("uid1").value;
+    let emote = document.getElementById("emote").value;
+
+    if(tc==="" || uid1===""){
+        document.getElementById("linkPreview").innerHTML="";
+        return;
+    }
+
+    let url = "http://127.0.0.1:10000/join?tc=" + tc + "&uid1=" + uid1;
+
+    if(emote !== ""){
+        url += "&emote_id=" + emote;
+    }
+
+    url += "&start=" + startValue;
+
+    document.getElementById("linkPreview").innerHTML = url;
+}
+
+function sendData(){
+
+    let tc = document.getElementById("tc").value;
+    let uid1 = document.getElementById("uid1").value;
+
+    if(tc === "" || uid1 === ""){
+        alert("Fill required fields!");
+        return;
+    }
+
+    buildLink();
+    let url = document.getElementById("linkPreview").innerText;
+
+    document.getElementById("loadingScreen").style.display="flex";
+
+    fetch(url)
+    .then(res => res.text())
+    .then(data => {
+        document.getElementById("loadingScreen").style.display="none";
+        document.getElementById("resultBox").innerText = data;
+    })
+    .catch(err => {
+        document.getElementById("loadingScreen").style.display="none";
+        document.getElementById("resultBox").innerText = "Error: " + err;
+    });
+}
+
+document.getElementById("tc").addEventListener("input", buildLink);
+document.getElementById("uid1").addEventListener("input", buildLink);
+document.getElementById("emote").addEventListener("input", buildLink);
+
+setStart(true);
+</script>
+
+</body>
+</html>
